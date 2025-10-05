@@ -2,6 +2,8 @@
 
 Flutter + Supabase(PostgreSQL)로 만든 프로페셔널 할 일 관리 앱
 
+- 배포 : https://jocular-otter-c09800.netlify.app/
+
 **포트폴리오 프로젝트** | **풀스택 웹 앱** | **실시간 클라우드 동기화**
 
 ---
