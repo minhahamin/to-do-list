@@ -388,8 +388,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
         ),
         Row(
           children: [
-            if (provider.isAuthenticated)
-              _buildIconButton(Icons.person, _showAccountMenu),
+            // 로그인 여부와 상관없이 프로필 메뉴 표시
+            _buildIconButton(
+              provider.isAuthenticated ? Icons.person : Icons.login,
+              _showAccountMenu,
+            ),
             _buildIconButton(Icons.analytics, _showStatsDialog),
             _buildIconButton(
               _isSearching ? Icons.close : Icons.search,

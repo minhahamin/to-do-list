@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../models/todo_item.dart';
 
 class TodoDialog extends StatefulWidget {
@@ -262,23 +263,23 @@ class _TodoDialogState extends State<TodoDialog> {
                     child: const Text('취소'),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_titleController.text.trim().isEmpty) return;
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_titleController.text.trim().isEmpty) return;
 
-                      final item = TodoItem(
-                        id: widget.existingItem?.id ?? DateTime.now().toString(),
-                        title: _titleController.text,
-                        isCompleted: widget.existingItem?.isCompleted ?? false,
-                        category: _selectedCategory,
-                        dueDate: _selectedDueDate,
-                        notes: _notesController.text,
-                        createdAt: widget.existingItem?.createdAt,
-                      );
+                        final item = TodoItem(
+                          id: widget.existingItem?.id ?? const Uuid().v4(),
+                          title: _titleController.text,
+                          isCompleted: widget.existingItem?.isCompleted ?? false,
+                          category: _selectedCategory,
+                          dueDate: _selectedDueDate,
+                          notes: _notesController.text,
+                          createdAt: widget.existingItem?.createdAt,
+                        );
 
-                      widget.onSave(item);
-                      Navigator.of(context).pop();
-                    },
+                        widget.onSave(item);
+                        Navigator.of(context).pop();
+                      },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/todo_item.dart';
+import '../models/user_profile.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
@@ -160,5 +161,70 @@ class SupabaseService {
           },
         )
         .subscribe();
+  }
+
+  // ==================== 프로필 관련 ====================
+
+  // 프로필 가져오기
+  Future<UserProfile?> getProfile() async {
+    if (!isAuthenticated) return null;
+
+    try {
+      final response = await client
+          .from('profiles')
+          .select()
+          .eq('id', currentUser!.id)
+          .single();
+
+      return UserProfile.fromJson(response);
+    } catch (e) {
+      print('Error fetching profile: $e');
+      return null;
+    }
+  }
+
+  // 프로필 업데이트
+  Future<bool> updateProfile(UserProfile profile) async {
+    if (!isAuthenticated) return false;
+
+    try {
+      await client
+          .from('profiles')
+          .update(profile.toJson())
+          .eq('id', currentUser!.id);
+
+      return true;
+    } catch (e) {
+      print('Error updating profile: $e');
+      return false;
+    }
+  }
+
+  // 프로필 생성 (회원가입 시)
+  Future<UserProfile?> createProfile({
+    required String fullName,
+    String? avatarUrl,
+  }) async {
+    if (!isAuthenticated) return null;
+
+    try {
+      final data = {
+        'id': currentUser!.id,
+        'email': currentUser!.email,
+        'full_name': fullName,
+        'avatar_url': avatarUrl,
+      };
+
+      final response = await client
+          .from('profiles')
+          .insert(data)
+          .select()
+          .single();
+
+      return UserProfile.fromJson(response);
+    } catch (e) {
+      print('Error creating profile: $e');
+      return null;
+    }
   }
 }
