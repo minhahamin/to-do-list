@@ -34,6 +34,9 @@ dependencies:
   
   # UUID 생성
   uuid: ^4.0.0
+  
+  # 웹 다운로드
+  universal_html: ^2.2.4
 
 dev_dependencies:
   flutter_test:

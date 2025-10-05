@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:convert';
+import 'package:universal_html/html.dart' as html;
 import '../models/todo_item.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/category_chip.dart';
@@ -151,17 +152,25 @@ class _TodoListScreenState extends State<TodoListScreen> {
   Future<void> _exportToJson(TodoProvider provider) async {
     try {
       final jsonString = provider.exportToJson();
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/todos_backup.json');
-      await file.writeAsString(jsonString);
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('백업 완료: ${file.path}'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+      if (kIsWeb) {
+        // 웹: 브라우저 다운로드
+        final bytes = utf8.encode(jsonString);
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'todos_backup.json')
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('백업 파일이 다운로드되었습니다'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -174,22 +183,24 @@ class _TodoListScreenState extends State<TodoListScreen> {
 
   Future<void> _importFromJson(TodoProvider provider) async {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/todos_backup.json');
-      
-      if (await file.exists()) {
-        final jsonString = await file.readAsString();
+      if (kIsWeb) {
+        // 웹: 파일 선택 대화상자
+        final uploadInput = html.FileUploadInputElement()..accept = '.json';
+        uploadInput.click();
+        
+        await uploadInput.onChange.first;
+        final file = uploadInput.files!.first;
+        final reader = html.FileReader();
+        
+        reader.readAsText(file);
+        await reader.onLoad.first;
+        
+        final jsonString = reader.result as String;
         await provider.importFromJson(jsonString);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('복원 완료')),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('백업 파일을 찾을 수 없습니다')),
+            const SnackBar(content: Text('복원 완료!')),
           );
         }
       }
