@@ -9,13 +9,26 @@ import 'providers/todo_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 환경 변수 로드
-  await dotenv.load(fileName: ".env");
+  // 환경 변수 로드 (웹에서는 에러 처리)
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print('⚠️ .env 파일을 로드할 수 없습니다. 기본값 사용.');
+  }
 
   // Supabase 초기화
+  const supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://zdtefhneaiguasckzmvi.supabase.co',
+  );
+  const supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdGVmaG5lYWlndWFzY2t6bXZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDM1MDUsImV4cCI6MjA3NTIxOTUwNX0.VgNJ9R9OFyE7CNo0gWw5yeoUw8dl544yzXJKoRPkf3U',
+  );
+
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'] ?? '',
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? '',
+    url: dotenv.env['SUPABASE_URL'] ?? supabaseUrl,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? supabaseAnonKey,
   );
 
   runApp(const TodoApp());
