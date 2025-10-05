@@ -28,7 +28,7 @@ class CategoryChip extends StatelessWidget {
       child: FilterChip(
         avatar: Icon(
           icon,
-          size: 16,
+          size: 18,
           color: isSelected ? Colors.white : color,
         ),
         label: Text(label),
@@ -45,9 +45,9 @@ class CategoryChip extends StatelessWidget {
                   ? Colors.white
                   : color,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 12,
+          fontSize: 14,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
