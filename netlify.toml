@@ -1,0 +1,12 @@
+[build]
+  command = "flutter build web --release"
+  publish = "build/web"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  # Flutter 환경 변수는 로컬 빌드 시 사용
+  # Netlify 환경 변수는 Dashboard에서 설정
