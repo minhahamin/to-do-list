@@ -33,6 +33,64 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
+  // 에러 메시지 한글 변환
+  String _getKoreanErrorMessage(String error) {
+    final errorLower = error.toLowerCase();
+    
+    // 이메일 관련
+    if (errorLower.contains('invalid login credentials') || 
+        errorLower.contains('invalid email or password')) {
+      return '이메일 또는 비밀번호가 올바르지 않습니다';
+    }
+    if (errorLower.contains('email not confirmed')) {
+      return '이메일 인증이 필요합니다. 이메일을 확인해주세요';
+    }
+    if (errorLower.contains('user already registered') || 
+        errorLower.contains('already been registered')) {
+      return '이미 가입된 이메일입니다';
+    }
+    if (errorLower.contains('invalid email')) {
+      return '올바른 이메일 형식이 아닙니다';
+    }
+    
+    // 비밀번호 관련
+    if (errorLower.contains('password') && errorLower.contains('short')) {
+      return '비밀번호는 최소 6자 이상이어야 합니다';
+    }
+    if (errorLower.contains('password') && errorLower.contains('weak')) {
+      return '비밀번호가 너무 약합니다. 더 강력한 비밀번호를 사용해주세요';
+    }
+    
+    // 네트워크 관련
+    if (errorLower.contains('network') || errorLower.contains('timeout')) {
+      return '네트워크 연결을 확인해주세요';
+    }
+    if (errorLower.contains('400')) {
+      return '잘못된 요청입니다. 입력 정보를 확인해주세요';
+    }
+    if (errorLower.contains('401')) {
+      return '인증에 실패했습니다';
+    }
+    if (errorLower.contains('403')) {
+      return '접근 권한이 없습니다';
+    }
+    if (errorLower.contains('404')) {
+      return '요청한 리소스를 찾을 수 없습니다';
+    }
+    if (errorLower.contains('500') || errorLower.contains('502') || 
+        errorLower.contains('503')) {
+      return '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+    }
+    
+    // 기타
+    if (errorLower.contains('too many requests')) {
+      return '너무 많은 요청을 보냈습니다. 잠시 후 다시 시도해주세요';
+    }
+    
+    // 알 수 없는 에러는 원본 메시지 반환
+    return '오류가 발생했습니다: ${error.length > 100 ? error.substring(0, 100) + '...' : error}';
+  }
+
   Future<void> _handleEmailAuth() async {
     if (_emailController.text.trim().isEmpty || 
         _passwordController.text.trim().isEmpty) {
@@ -81,7 +139,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = _getKoreanErrorMessage(e.toString());
       });
     } finally {
       setState(() {
@@ -103,7 +161,7 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = '구글 로그인 실패: $e';
+        _error = _getKoreanErrorMessage(e.toString());
       });
     } finally {
       setState(() {
