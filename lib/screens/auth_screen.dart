@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/supabase_service.dart';
+import '../providers/todo_provider.dart';
+import 'todo_list_screen.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final VoidCallback? onToggleTheme;
+  final ThemeMode? themeMode;
+  
+  const AuthScreen({
+    super.key,
+    this.onToggleTheme,
+    this.themeMode,
+  });
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -51,7 +61,23 @@ class _AuthScreenState extends State<AuthScreen> {
       }
       
       if (mounted) {
-        Navigator.of(context).pop(true);
+        // Provider 동기화
+        final provider = Provider.of<TodoProvider>(context, listen: false);
+        await provider.syncWithCloud();
+        
+        // TodoListScreen으로 이동
+        if (widget.onToggleTheme != null && widget.themeMode != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => TodoListScreen(
+                onToggleTheme: widget.onToggleTheme!,
+                themeMode: widget.themeMode!,
+              ),
+            ),
+          );
+        } else {
+          Navigator.of(context).pop(true);
+        }
       }
     } catch (e) {
       setState(() {

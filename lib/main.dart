@@ -123,22 +123,14 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     } else {
       // 로그인 안 되어 있으면 인증 화면으로
-      final shouldContinue = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
-      );
-
-      if (!mounted) return;
-
-      if (shouldContinue != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => TodoListScreen(
-              onToggleTheme: widget.onToggleTheme,
-              themeMode: widget.themeMode,
-            ),
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => AuthScreen(
+            onToggleTheme: widget.onToggleTheme,
+            themeMode: widget.themeMode,
           ),
-        );
-      }
+        ),
+      );
     }
   }
 

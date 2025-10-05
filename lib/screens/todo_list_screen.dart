@@ -254,10 +254,21 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 title: const Text('로그아웃', style: TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(context);
+                  
+                  // Provider 초기화
+                  provider.clearAllTodos();
+                  
+                  // 로그아웃
                   await supabase.signOut();
+                  
                   if (mounted) {
                     Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => AuthScreen(
+                          onToggleTheme: widget.onToggleTheme,
+                          themeMode: widget.themeMode,
+                        ),
+                      ),
                     );
                   }
                 },
@@ -268,8 +279,13 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 title: const Text('로그인'),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => AuthScreen(
+                        onToggleTheme: widget.onToggleTheme,
+                        themeMode: widget.themeMode,
+                      ),
+                    ),
                   );
                 },
               ),
