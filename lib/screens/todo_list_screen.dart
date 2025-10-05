@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../models/todo_item.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/todo_card.dart';
 import '../dialogs/todo_dialog.dart';
 import '../dialogs/stats_dialog.dart';
+import '../providers/todo_provider.dart';
+import '../services/supabase_service.dart';
+import 'auth_screen.dart';
 
 class TodoListScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -21,7 +27,6 @@ class TodoListScreen extends StatefulWidget {
 }
 
 class _TodoListScreenState extends State<TodoListScreen> {
-  final List<TodoItem> _todoItems = [];
   SortType _currentSort = SortType.date;
   TodoCategory? _filterCategory;
   final TextEditingController _searchController = TextEditingController();
@@ -29,31 +34,43 @@ class _TodoListScreenState extends State<TodoListScreen> {
   String _searchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+    // 초기 동기화
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<TodoProvider>(context, listen: false);
+      if (provider.isAuthenticated) {
+        provider.syncWithCloud();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  List<TodoItem> get _filteredAndSortedItems {
-    var items = _todoItems;
+  List<TodoItem> _getFilteredAndSortedItems(List<TodoItem> items) {
+    var filteredItems = items;
 
     // 검색 필터
     if (_searchQuery.isNotEmpty) {
-      items = items.where((item) => item.matchesSearch(_searchQuery)).toList();
+      filteredItems = filteredItems.where((item) => item.matchesSearch(_searchQuery)).toList();
     }
 
     // 카테고리 필터
     if (_filterCategory != null) {
-      items = items.where((item) => item.category == _filterCategory).toList();
+      filteredItems = filteredItems.where((item) => item.category == _filterCategory).toList();
     }
 
     // 정렬
     switch (_currentSort) {
       case SortType.date:
-        items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        filteredItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         break;
       case SortType.dueDate:
-        items.sort((a, b) {
+        filteredItems.sort((a, b) {
           if (a.dueDate == null && b.dueDate == null) return 0;
           if (a.dueDate == null) return 1;
           if (b.dueDate == null) return -1;
@@ -61,59 +78,19 @@ class _TodoListScreenState extends State<TodoListScreen> {
         });
         break;
       case SortType.category:
-        items.sort((a, b) => a.category.label.compareTo(b.category.label));
+        filteredItems.sort((a, b) => a.category.label.compareTo(b.category.label));
         break;
       case SortType.completed:
-        items.sort((a, b) => a.isCompleted ? 1 : -1);
+        filteredItems.sort((a, b) => a.isCompleted ? 1 : -1);
         break;
     }
 
-    return items;
-  }
-
-  void _addTodoItem(TodoItem item) {
-    setState(() {
-      _todoItems.add(item);
-    });
-  }
-
-  void _updateTodoItem(String id, TodoItem updatedItem) {
-    setState(() {
-      final index = _todoItems.indexWhere((item) => item.id == id);
-      if (index != -1) {
-        _todoItems[index] = updatedItem;
-      }
-    });
-  }
-
-  void _toggleTodoItem(String id) {
-    setState(() {
-      final index = _todoItems.indexWhere((item) => item.id == id);
-      if (index != -1) {
-        _todoItems[index].isCompleted = !_todoItems[index].isCompleted;
-      }
-    });
-  }
-
-  void _deleteTodoItem(String id) {
-    setState(() {
-      _todoItems.removeWhere((item) => item.id == id);
-    });
-  }
-
-  void _reorderItems(int oldIndex, int newIndex) {
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final item = _filteredAndSortedItems.removeAt(oldIndex);
-      _filteredAndSortedItems.insert(newIndex, item);
-      _todoItems.clear();
-      _todoItems.addAll(_filteredAndSortedItems);
-    });
+    return filteredItems;
   }
 
   void _showAddOrEditTodoDialog({TodoItem? editItem}) {
+    final provider = Provider.of<TodoProvider>(context, listen: false);
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -121,9 +98,9 @@ class _TodoListScreenState extends State<TodoListScreen> {
           existingItem: editItem,
           onSave: (item) {
             if (editItem != null) {
-              _updateTodoItem(editItem.id, item);
+              provider.updateTodo(editItem.id, item);
             } else {
-              _addTodoItem(item);
+              provider.addTodo(item);
             }
           },
         );
@@ -132,66 +109,233 @@ class _TodoListScreenState extends State<TodoListScreen> {
   }
 
   void _showStatsDialog() {
+    final provider = Provider.of<TodoProvider>(context, listen: false);
     showDialog(
       context: context,
-      builder: (BuildContext context) => StatsDialog(todoItems: _todoItems),
+      builder: (BuildContext context) => StatsDialog(todoItems: provider.todoItems),
+    );
+  }
+
+  Future<void> _showBackupDialog() async {
+    final provider = Provider.of<TodoProvider>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('백업 & 복원'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.file_download),
+              title: const Text('JSON 내보내기'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _exportToJson(provider);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_upload),
+              title: const Text('JSON 가져오기'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _importFromJson(provider);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportToJson(TodoProvider provider) async {
+    try {
+      final jsonString = provider.exportToJson();
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/todos_backup.json');
+      await file.writeAsString(jsonString);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('백업 완료: ${file.path}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('백업 실패: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importFromJson(TodoProvider provider) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/todos_backup.json');
+      
+      if (await file.exists()) {
+        final jsonString = await file.readAsString();
+        await provider.importFromJson(jsonString);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('복원 완료')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('백업 파일을 찾을 수 없습니다')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('복원 실패: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAccountMenu() async {
+    final provider = Provider.of<TodoProvider>(context, listen: false);
+    final supabase = SupabaseService();
+    
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (provider.isAuthenticated) ...[
+              ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(supabase.currentUser?.email ?? '사용자'),
+                subtitle: const Text('로그인됨'),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.sync),
+                title: const Text('수동 동기화'),
+                onTap: () {
+                  Navigator.pop(context);
+                  provider.syncWithCloud();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.backup),
+                title: const Text('백업 & 복원'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showBackupDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.red),
+                title: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await supabase.signOut();
+                  if (mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                    );
+                  }
+                },
+              ),
+            ] else ...[
+              ListTile(
+                leading: const Icon(Icons.login),
+                title: const Text('로그인'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AuthScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.backup),
+                title: const Text('백업 & 복원'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showBackupDialog();
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final completedCount = _todoItems.where((item) => item.isCompleted).length;
-    final totalCount = _todoItems.length;
-    final progress = totalCount > 0 ? completedCount / totalCount : 0.0;
-    final todayTasks = _todoItems.where((item) => item.isDueToday).length;
-    final overdueTasks = _todoItems.where((item) => item.isOverdue).length;
+    return Consumer<TodoProvider>(
+      builder: (context, provider, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final allItems = provider.todoItems;
+        final filteredItems = _getFilteredAndSortedItems(allItems);
+        
+        final completedCount = allItems.where((item) => item.isCompleted).length;
+        final totalCount = allItems.length;
+        final progress = totalCount > 0 ? completedCount / totalCount : 0.0;
+        final todayTasks = allItems.where((item) => item.isDueToday).length;
+        final overdueTasks = allItems.where((item) => item.isOverdue).length;
 
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [
-                    Colors.deepPurple.shade900,
-                    Colors.deepPurple.shade700,
-                    Colors.pink.shade900,
-                  ]
-                : [
-                    Colors.deepPurple.shade400,
-                    Colors.deepPurple.shade200,
-                    Colors.pink.shade100,
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [
+                        Colors.deepPurple.shade900,
+                        Colors.deepPurple.shade700,
+                        Colors.pink.shade900,
+                      ]
+                    : [
+                        Colors.deepPurple.shade400,
+                        Colors.deepPurple.shade200,
+                        Colors.pink.shade100,
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(isDark, provider, completedCount, totalCount, progress, todayTasks, overdueTasks),
+                  _buildTodoList(isDark, provider, filteredItems),
+                ],
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(isDark, completedCount, totalCount, progress, todayTasks, overdueTasks),
-              _buildTodoList(isDark),
-            ],
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showAddOrEditTodoDialog(),
+            backgroundColor: Colors.deepPurple,
+            icon: const Icon(Icons.add),
+            label: const Text('추가'),
+            elevation: 6,
           ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddOrEditTodoDialog(),
-        backgroundColor: Colors.deepPurple,
-        icon: const Icon(Icons.add),
-        label: const Text('추가'),
-        elevation: 6,
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(bool isDark, int completedCount, int totalCount, double progress, int todayTasks, int overdueTasks) {
+  Widget _buildHeader(bool isDark, TodoProvider provider, int completedCount, int totalCount, double progress, int todayTasks, int overdueTasks) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTopBar(isDark),
+          _buildTopBar(isDark, provider),
           if (_isSearching) ...[
             const SizedBox(height: 16),
             _buildSearchBar(),
@@ -205,7 +349,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
     );
   }
 
-  Widget _buildTopBar(bool isDark) {
+  Widget _buildTopBar(bool isDark, TodoProvider provider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -221,17 +365,31 @@ class _TodoListScreenState extends State<TodoListScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              '${DateTime.now().year}년 ${DateTime.now().month}월 ${DateTime.now().day}일',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-              ),
+            Row(
+              children: [
+                Text(
+                  '${DateTime.now().year}년 ${DateTime.now().month}월 ${DateTime.now().day}일',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+                if (!provider.isOnline) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.cloud_off,
+                    size: 16,
+                    color: Colors.white.withOpacity(0.7),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
         Row(
           children: [
+            if (provider.isAuthenticated)
+              _buildIconButton(Icons.person, _showAccountMenu),
             _buildIconButton(Icons.analytics, _showStatsDialog),
             _buildIconButton(
               _isSearching ? Icons.close : Icons.search,
@@ -397,7 +555,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
     );
   }
 
-  Widget _buildTodoList(bool isDark) {
+  Widget _buildTodoList(bool isDark, TodoProvider provider, List<TodoItem> filteredItems) {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
@@ -407,40 +565,42 @@ class _TodoListScreenState extends State<TodoListScreen> {
             topRight: Radius.circular(30),
           ),
         ),
-        child: _filteredAndSortedItems.isEmpty
-            ? _buildEmptyState(isDark)
-            : ReorderableListView.builder(
-                itemCount: _filteredAndSortedItems.length,
-                padding: const EdgeInsets.all(16),
-                onReorder: _reorderItems,
-                itemBuilder: (context, index) {
-                  final item = _filteredAndSortedItems[index];
-                  return TodoCard(
-                    key: Key(item.id),
-                    item: item,
-                    isDark: isDark,
-                    index: index,
-                    onToggle: () => _toggleTodoItem(item.id),
-                    onDelete: () {
-                      _deleteTodoItem(item.id);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('할 일이 삭제되었습니다'),
-                          action: SnackBarAction(
-                            label: '취소',
-                            onPressed: () {
-                              setState(() {
-                                _todoItems.add(item);
-                              });
-                            },
-                          ),
-                        ),
+        child: provider.isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : filteredItems.isEmpty
+                ? _buildEmptyState(isDark)
+                : ReorderableListView.builder(
+                    itemCount: filteredItems.length,
+                    padding: const EdgeInsets.all(16),
+                    onReorder: (oldIndex, newIndex) {
+                      provider.reorderTodos(oldIndex, newIndex);
+                    },
+                    itemBuilder: (context, index) {
+                      final item = filteredItems[index];
+                      return TodoCard(
+                        key: Key(item.id),
+                        item: item,
+                        isDark: isDark,
+                        index: index,
+                        onToggle: () => provider.toggleTodo(item.id),
+                        onDelete: () {
+                          provider.deleteTodo(item.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('할 일이 삭제되었습니다'),
+                              action: SnackBarAction(
+                                label: '취소',
+                                onPressed: () {
+                                  provider.addTodo(item);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        onEdit: () => _showAddOrEditTodoDialog(editItem: item),
                       );
                     },
-                    onEdit: () => _showAddOrEditTodoDialog(editItem: item),
-                  );
-                },
-              ),
+                  ),
       ),
     );
   }

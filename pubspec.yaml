@@ -1,5 +1,5 @@
 name: to_do_list
-description: A beautiful Flutter todo list application
+description: A beautiful Flutter todo list application with cloud sync
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,6 +10,27 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
+  
+  # Supabase
+  supabase_flutter: ^2.0.0
+  
+  # 로컬 저장
+  shared_preferences: ^2.2.2
+  
+  # 네트워크
+  connectivity_plus: ^5.0.2
+  
+  # 인증
+  google_sign_in: ^6.1.5
+  
+  # JSON
+  path_provider: ^2.1.1
+  
+  # 상태 관리
+  provider: ^6.1.1
+  
+  # 환경 변수
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -18,4 +39,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
+  
+  # 환경 변수 파일
+  assets:
+    - .env

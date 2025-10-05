@@ -12,6 +12,13 @@ enum TodoCategory {
   final String label;
   final IconData icon;
   final Color color;
+
+  static TodoCategory fromString(String value) {
+    return TodoCategory.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => TodoCategory.other,
+    );
+  }
 }
 
 enum SortType {
@@ -60,5 +67,52 @@ class TodoItem {
     final lowerQuery = query.toLowerCase();
     return title.toLowerCase().contains(lowerQuery) ||
         category.label.toLowerCase().contains(lowerQuery);
+  }
+
+  // JSON 변환
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'is_completed': isCompleted,
+      'due_date': dueDate?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'category': category.name,
+      'notes': notes,
+    };
+  }
+
+  factory TodoItem.fromJson(Map<String, dynamic> json) {
+    return TodoItem(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      isCompleted: json['is_completed'] as bool? ?? false,
+      dueDate: json['due_date'] != null 
+          ? DateTime.parse(json['due_date'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      category: TodoCategory.fromString(json['category'] as String? ?? 'other'),
+      notes: json['notes'] as String?,
+    );
+  }
+
+  TodoItem copyWith({
+    String? id,
+    String? title,
+    bool? isCompleted,
+    DateTime? dueDate,
+    DateTime? createdAt,
+    TodoCategory? category,
+    String? notes,
+  }) {
+    return TodoItem(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      isCompleted: isCompleted ?? this.isCompleted,
+      dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt ?? this.createdAt,
+      category: category ?? this.category,
+      notes: notes ?? this.notes,
+    );
   }
 }
