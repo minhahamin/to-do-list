@@ -40,7 +40,7 @@ class StatsDialog extends StatelessWidget {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -48,7 +48,6 @@ class StatsDialog extends StatelessWidget {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -73,59 +72,64 @@ class StatsDialog extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            // 전체 통계
-            _buildStatRow('총 할 일', '$totalTasks개', Icons.list, Colors.blue),
-            _buildStatRow(
-              '완료율',
-              '${completionRate.toStringAsFixed(1)}%',
-              Icons.check_circle,
-              Colors.green,
-            ),
-            _buildStatRow('오늘 마감', '$todayTasks개', Icons.today, Colors.orange),
-            _buildStatRow('지연됨', '$overdueTasks개', Icons.warning, Colors.red),
-            const Divider(height: 32),
-            // 주간 통계
-            Text(
-              '이번 주 (최근 7일)',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.grey[300] : Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildStatRow('생성된 할 일', '$weekTasks개', Icons.add, Colors.purple),
-            _buildStatRow(
-              '완료한 할 일',
-              '$weekCompletedTasks개',
-              Icons.done,
-              Colors.teal,
-            ),
-            const Divider(height: 32),
-            // 주간 그래프
-            StatisticsChart(todoItems: todoItems),
-            const Divider(height: 32),
-            // 카테고리별 통계
-            Text(
-              '카테고리별 분포',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.grey[300] : Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 150,
-              child: ListView(
-                children: TodoCategory.values
-                    .where((category) => categoryStats[category]! > 0)
-                    .map((category) => _buildCategoryStatRow(
-                          category,
-                          categoryStats[category]!,
-                        ))
-                    .toList(),
+            const SizedBox(height: 16),
+            // 스크롤 가능한 영역
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 전체 통계
+                    _buildStatRow('총 할 일', '$totalTasks개', Icons.list, Colors.blue),
+                    _buildStatRow(
+                      '완료율',
+                      '${completionRate.toStringAsFixed(1)}%',
+                      Icons.check_circle,
+                      Colors.green,
+                    ),
+                    _buildStatRow('오늘 마감', '$todayTasks개', Icons.today, Colors.orange),
+                    _buildStatRow('지연됨', '$overdueTasks개', Icons.warning, Colors.red),
+                    const Divider(height: 24),
+                    // 주간 통계
+                    Text(
+                      '이번 주 (최근 7일)',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildStatRow('생성된 할 일', '$weekTasks개', Icons.add, Colors.purple),
+                    _buildStatRow(
+                      '완료한 할 일',
+                      '$weekCompletedTasks개',
+                      Icons.done,
+                      Colors.teal,
+                    ),
+                    const Divider(height: 24),
+                    // 주간 그래프
+                    StatisticsChart(todoItems: todoItems),
+                    const Divider(height: 24),
+                    // 카테고리별 통계
+                    Text(
+                      '카테고리별 분포',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...TodoCategory.values
+                        .where((category) => categoryStats[category]! > 0)
+                        .map((category) => _buildCategoryStatRow(
+                              category,
+                              categoryStats[category]!,
+                            ))
+                        .toList(),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
