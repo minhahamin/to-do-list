@@ -255,9 +255,6 @@ class _TodoListScreenState extends State<TodoListScreen> {
                 onTap: () async {
                   Navigator.pop(context);
                   
-                  // Provider 초기화
-                  provider.clearAllTodos();
-                  
                   // 로그아웃
                   await supabase.signOut();
                   
