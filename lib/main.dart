@@ -95,14 +95,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    // 인증 화면 표시
-    final shouldContinue = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const AuthScreen()),
-    );
-
-    if (!mounted) return;
-
-    if (shouldContinue != null) {
+    // Supabase 세션 확인
+    final session = Supabase.instance.client.auth.currentSession;
+    
+    if (session != null) {
+      // 이미 로그인되어 있으면 바로 메인 화면으로 ✅
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => TodoListScreen(
@@ -111,6 +108,24 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
       );
+    } else {
+      // 로그인 안 되어 있으면 인증 화면으로
+      final shouldContinue = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+      );
+
+      if (!mounted) return;
+
+      if (shouldContinue != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => TodoListScreen(
+              onToggleTheme: widget.onToggleTheme,
+              themeMode: widget.themeMode,
+            ),
+          ),
+        );
+      }
     }
   }
 
