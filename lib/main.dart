@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
@@ -9,26 +10,25 @@ import 'providers/todo_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 환경 변수 로드 (웹에서는 에러 처리)
-  try {
+  // 환경 변수 설정
+  String supabaseUrl;
+  String supabaseAnonKey;
+
+  if (kIsWeb) {
+    // 웹 배포: 하드코딩된 값 사용
+    supabaseUrl = 'https://zdtefhneaiguasckzmvi.supabase.co';
+    supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdGVmaG5lYWlndWFzY2t6bXZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDM1MDUsImV4cCI6MjA3NTIxOTUwNX0.VgNJ9R9OFyE7CNo0gWw5yeoUw8dl544yzXJKoRPkf3U';
+  } else {
+    // 로컬 개발: .env 파일 사용
     await dotenv.load(fileName: ".env");
-  } catch (e) {
-    print('⚠️ .env 파일을 로드할 수 없습니다. 기본값 사용.');
+    supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+    supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
   }
 
   // Supabase 초기화
-  const supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://zdtefhneaiguasckzmvi.supabase.co',
-  );
-  const supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdGVmaG5lYWlndWFzY2t6bXZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NDM1MDUsImV4cCI6MjA3NTIxOTUwNX0.VgNJ9R9OFyE7CNo0gWw5yeoUw8dl544yzXJKoRPkf3U',
-  );
-
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL'] ?? supabaseUrl,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? supabaseAnonKey,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
 
   runApp(const TodoApp());
