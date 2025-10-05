@@ -37,6 +37,12 @@ dependencies:
   
   # 웹 다운로드
   universal_html: ^2.2.4
+  
+  # 차트
+  fl_chart: ^0.65.0
+  
+  # URL 런처
+  url_launcher: ^6.2.2
 
 dev_dependencies:
   flutter_test:

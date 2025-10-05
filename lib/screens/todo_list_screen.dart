@@ -7,11 +7,13 @@ import '../models/todo_item.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/category_chip.dart';
 import '../widgets/todo_card.dart';
+import '../widgets/voice_input_button.dart';
 import '../dialogs/todo_dialog.dart';
 import '../dialogs/stats_dialog.dart';
 import '../providers/todo_provider.dart';
 import '../services/supabase_service.dart';
 import 'auth_screen.dart';
+import 'package:uuid/uuid.dart';
 
 class TodoListScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -328,13 +330,36 @@ class _TodoListScreenState extends State<TodoListScreen> {
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showAddOrEditTodoDialog(),
-            backgroundColor: Colors.deepPurple,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add),
-            label: const Text('추가'),
-            elevation: 6,
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 음성 입력 버튼
+              if (kIsWeb)
+                VoiceInputButton(
+                  onText: (text) {
+                    final item = TodoItem(
+                      id: const Uuid().v4(),
+                      title: text,
+                      category: TodoItem.suggestCategory(text, null),
+                    );
+                    provider.addTodo(item);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('추가됨: $text')),
+                    );
+                  },
+                ),
+              if (kIsWeb) const SizedBox(height: 12),
+              // 일반 추가 버튼
+              FloatingActionButton.extended(
+                heroTag: 'add_button',  // Hero 태그 중복 방지
+                onPressed: () => _showAddOrEditTodoDialog(),
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add),
+                label: const Text('추가'),
+                elevation: 6,
+              ),
+            ],
           ),
         );
       },

@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/todo_item.dart';
 import '../services/supabase_service.dart';
+import '../services/ai_service.dart';
+import 'package:uuid/uuid.dart';
 
 class TodoProvider with ChangeNotifier {
   final SupabaseService _supabase = SupabaseService();
@@ -132,7 +134,29 @@ class TodoProvider with ChangeNotifier {
   Future<void> toggleTodo(String id) async {
     final index = _todoItems.indexWhere((item) => item.id == id);
     if (index != -1) {
-      _todoItems[index].isCompleted = !_todoItems[index].isCompleted;
+      final item = _todoItems[index];
+      item.isCompleted = !item.isCompleted;
+      
+      // 반복 일정인 경우 완료 시 다음 일정 생성
+      if (item.isCompleted && 
+          item.repeatType != RepeatType.none && 
+          item.dueDate != null) {
+        final nextDate = AIService.calculateNextDueDate(
+          item.dueDate!,
+          item.repeatType,
+        );
+        
+        if (nextDate != null) {
+          final newItem = item.copyWith(
+            id: const Uuid().v4(),
+            isCompleted: false,
+            dueDate: nextDate,
+            createdAt: DateTime.now(),
+          );
+          await addTodo(newItem);
+        }
+      }
+      
       await _saveLocalTodos();
       notifyListeners();
 

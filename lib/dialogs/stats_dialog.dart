@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/todo_item.dart';
+import '../widgets/statistics_chart.dart';
 
 class StatsDialog extends StatelessWidget {
   final List<TodoItem> todoItems;
@@ -102,6 +103,9 @@ class StatsDialog extends StatelessWidget {
               Colors.teal,
             ),
             const Divider(height: 32),
+            // 주간 그래프
+            StatisticsChart(todoItems: todoItems),
+            const Divider(height: 32),
             // 카테고리별 통계
             Text(
               '카테고리별 분포',
@@ -112,7 +116,8 @@ class StatsDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Expanded(
+            SizedBox(
+              height: 150,
               child: ListView(
                 children: TodoCategory.values
                     .where((category) => categoryStats[category]! > 0)

@@ -191,35 +191,36 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              '또는',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ),
-                          Expanded(child: Divider(color: Colors.grey[400])),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : _handleGoogleSignIn,
-                          icon: const Icon(Icons.login, size: 24),
-                          label: const Text('Google로 계속하기'),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Google 로그인 버튼 주석 처리 (설정이 복잡함)
+                      // Row(
+                      //   children: [
+                      //     Expanded(child: Divider(color: Colors.grey[400])),
+                      //     Padding(
+                      //       padding: const EdgeInsets.symmetric(horizontal: 16),
+                      //       child: Text(
+                      //         '또는',
+                      //         style: TextStyle(color: Colors.grey[600]),
+                      //       ),
+                      //     ),
+                      //     Expanded(child: Divider(color: Colors.grey[400])),
+                      //   ],
+                      // ),
+                      // const SizedBox(height: 16),
+                      // SizedBox(
+                      //   width: double.infinity,
+                      //   height: 50,
+                      //   child: OutlinedButton.icon(
+                      //     onPressed: _isLoading ? null : _handleGoogleSignIn,
+                      //     icon: const Icon(Icons.login, size: 24),
+                      //     label: const Text('Google로 계속하기'),
+                      //     style: OutlinedButton.styleFrom(
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(12),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+                      // const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
                           setState(() {
@@ -232,13 +233,6 @@ class _AuthScreenState extends State<AuthScreen> {
                               ? '계정이 없으신가요? 회원가입'
                               : '이미 계정이 있으신가요? 로그인',
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(false);
-                        },
-                        child: const Text('로그인하지 않고 계속하기'),
                       ),
                     ],
                   ),
