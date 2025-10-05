@@ -1,6 +1,6 @@
 # Todo List App
 
-Flutter로 만든 간단하고 아름다운 할 일 관리 앱입니다.
+Flutter로 만든 간단한 할 일 관리 앱입니다.
 
 ## 기능
 
