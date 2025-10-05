@@ -31,23 +31,27 @@ class CategoryChip extends StatelessWidget {
           size: 18,
           color: isSelected ? Colors.white : color,
         ),
-        label: Text(label),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected
+                ? Colors.white
+                : isDark
+                    ? Colors.white
+                    : color,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
         selected: isSelected,
         onSelected: (bool selected) => onTap(),
         backgroundColor: isDark
             ? Colors.grey[800]?.withOpacity(0.8)
             : Colors.white.withOpacity(0.9),
         selectedColor: color,
-        labelStyle: TextStyle(
-          color: isSelected
-              ? Colors.white
-              : isDark
-                  ? Colors.white
-                  : color,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          fontSize: 14,
-        ),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
