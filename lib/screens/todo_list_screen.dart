@@ -320,6 +320,7 @@ class _TodoListScreenState extends State<TodoListScreen> {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showAddOrEditTodoDialog(),
             backgroundColor: Colors.deepPurple,
+            foregroundColor: Colors.white,
             icon: const Icon(Icons.add),
             label: const Text('추가'),
             elevation: 6,
@@ -559,6 +560,11 @@ class _TodoListScreenState extends State<TodoListScreen> {
   }
 
   Widget _buildTodoList(bool isDark, TodoProvider provider, List<TodoItem> filteredItems) {
+    // 필터링/정렬이 활성화되어 있는지 확인
+    final isFiltered = _searchQuery.isNotEmpty || _filterCategory != null;
+    final isSorted = _currentSort != SortType.date;
+    final canReorder = !isFiltered && !isSorted;
+
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
@@ -572,37 +578,103 @@ class _TodoListScreenState extends State<TodoListScreen> {
             ? const Center(child: CircularProgressIndicator())
             : filteredItems.isEmpty
                 ? _buildEmptyState(isDark)
-                : ReorderableListView.builder(
-                    itemCount: filteredItems.length,
-                    padding: const EdgeInsets.all(16),
-                    onReorder: (oldIndex, newIndex) {
-                      provider.reorderTodos(oldIndex, newIndex);
-                    },
-                    itemBuilder: (context, index) {
-                      final item = filteredItems[index];
-                      return TodoCard(
-                        key: Key(item.id),
-                        item: item,
-                        isDark: isDark,
-                        index: index,
-                        onToggle: () => provider.toggleTodo(item.id),
-                        onDelete: () {
-                          provider.deleteTodo(item.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('할 일이 삭제되었습니다'),
-                              action: SnackBarAction(
-                                label: '취소',
-                                onPressed: () {
-                                  provider.addTodo(item);
+                : Column(
+                    children: [
+                      // 순서 변경 불가 안내
+                      if (!canReorder && filteredItems.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, 
+                                color: Colors.orange.shade700, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '검색/필터/정렬 중에는 순서를 변경할 수 없습니다',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.orange.shade900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Expanded(
+                        child: canReorder
+                            ? ReorderableListView.builder(
+                                itemCount: filteredItems.length,
+                                padding: const EdgeInsets.all(16),
+                                onReorder: (oldIndex, newIndex) {
+                                  provider.reorderTodos(oldIndex, newIndex);
+                                },
+                                itemBuilder: (context, index) {
+                                  final item = filteredItems[index];
+                                  return TodoCard(
+                                    key: Key(item.id),
+                                    item: item,
+                                    isDark: isDark,
+                                    index: index,
+                                    onToggle: () => provider.toggleTodo(item.id),
+                                    onDelete: () {
+                                      provider.deleteTodo(item.id);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: const Text('할 일이 삭제되었습니다'),
+                                          action: SnackBarAction(
+                                            label: '취소',
+                                            onPressed: () {
+                                              provider.addTodo(item);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    onEdit: () => _showAddOrEditTodoDialog(editItem: item),
+                                  );
+                                },
+                              )
+                            : ListView.builder(
+                                itemCount: filteredItems.length,
+                                padding: const EdgeInsets.all(16),
+                                itemBuilder: (context, index) {
+                                  final item = filteredItems[index];
+                                  return Container(
+                                    key: Key(item.id),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: TodoCard(
+                                      item: item,
+                                      isDark: isDark,
+                                      index: -1, // 드래그 핸들 숨기기
+                                      onToggle: () => provider.toggleTodo(item.id),
+                                      onDelete: () {
+                                        provider.deleteTodo(item.id);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: const Text('할 일이 삭제되었습니다'),
+                                            action: SnackBarAction(
+                                              label: '취소',
+                                              onPressed: () {
+                                                provider.addTodo(item);
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      onEdit: () => _showAddOrEditTodoDialog(editItem: item),
+                                    ),
+                                  );
                                 },
                               ),
-                            ),
-                          );
-                        },
-                        onEdit: () => _showAddOrEditTodoDialog(editItem: item),
-                      );
-                    },
+                      ),
+                    ],
                   ),
       ),
     );

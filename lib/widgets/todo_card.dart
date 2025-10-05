@@ -71,17 +71,30 @@ class TodoCard extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    // Drag handle
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        child: Icon(
-                          Icons.drag_handle,
-                          color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    // Drag handle (index가 -1이면 숨김)
+                    if (index >= 0)
+                      ReorderableDragStartListener(
+                        index: index,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.grab,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isDark 
+                                  ? Colors.grey[800] 
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.drag_indicator,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              size: 24,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      )
+                    else
+                      const SizedBox(width: 8),
                     // 체크박스
                     Transform.scale(
                       scale: 1.2,
